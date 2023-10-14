@@ -1,0 +1,51 @@
+name: bun-windows-wsl2
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# set default shell to be wsl2
+defaults:
+  run:
+    shell: wsl-bash {0}
+
+jobs:
+  tests-windows-wsl2:
+    name: Tests windows-wsl2
+    runs-on: windows-latest
+    steps:
+      # setup wsl2
+      - uses: Vampire/setup-wsl@v2
+        with:
+          distribution: Ubuntu-22.04
+          set-as-default: 'true'
+
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+      - name: install llvm-16
+        run: wget https://apt.llvm.org/llvm.sh -O - | sudo bash -s -- 16 all
+
+      - name: install dependencies
+        run: sudo apt install -y cargo ccache cmake git golang libtool ninja-build pkg-config rustc esbuild
+
+      - name: install zig
+        run: npm i -g @oven/zig
+
+      - name: setup
+        run: make setup
+
+      - name: build
+        run: |
+          make zig
+          make cpp
+          make js
